@@ -3,6 +3,7 @@
 from collections import defaultdict,namedtuple
 import copy
 import sys
+import gzip
 
 CoNLLFormat=namedtuple("CoNLLFormat",["ID","FORM","LEMMA","POS","FEAT","HEAD","DEPREL"])
 
@@ -19,7 +20,7 @@ SWAP=3
 
 def conllu_reader(fname,lower,conll_format="conllu"):
     form=formats[conll_format]
-    f=open(fname,"rt",encoding="utf-8")
+    f=gzip.open(fname,"rt",encoding="utf-8")
     comments=[]
     sentence=[]
     for line in f:

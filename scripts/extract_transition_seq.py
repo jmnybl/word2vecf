@@ -1,7 +1,7 @@
 # python 2
 # needs also tree.py, code extracted form Turku Dependency Parser, stand-alone code to extract transition sequence from a given tree (and featurize it into word2vecf format)
 
-import codecs
+import gzip
 from tree import Token, Tree, Dep, State, Transition, conllu_reader
 import sys
 
