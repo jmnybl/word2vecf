@@ -69,39 +69,65 @@ def transition_seq(sent):
 
 def drive_parser(transitions,sent):
     """ Sent is a list of conll lines."""
-    features=[]
     state=State(sent,syn=False)
     while not state.tree.ready:
         next=transitions[len(state.transitions)]
         if next.move not in state.valid_transitions():
             raise ValueError("Invalid GS Transition")
-        features+=create_features(state,next)        
+        yield state, next       
         state.update(next)
 
-    return features
 
 actions=["SHIFT","RIGHT-ARC","LEFT-ARC","SWAP"]
 
-def create_features(s,next):
+def next_action(s,next):
+    # predict where the word is combined to next action
 
     if len(s.stack)==0:
         return []
 
     features=[]
-    features.append((s.stack[-1].text,u"stack1_"+actions[next.move]))
+    features.append((s.stack[-1].text,(u"stack1_"+actions[next.move],None)))
     if next.dType!=None:
-        features.append((s.stack[-1].text,u"stack1_"+next.dType))
+        features.append((s.stack[-1].text,(u"stack1_"+next.dType,None)))
     if len(s.stack)>1:
-        features.append((s.stack[-2].text,u"stack2_"+actions[next.move]))
+        features.append((s.stack[-2].text,(u"stack2_"+actions[next.move],None)))
         if next.dType!=None:
-            features.append((s.stack[-2].text,u"stack2_"+next.dType))
+            features.append((s.stack[-2].text,(u"stack2_"+next.dType,None)))
+    return features
+
+def full_context_with_words(s,next):
+    # predict where the word is and all its context words
+
+    features=[]
+    context_words=[]
+    # queue
+    for i in range(min(2,len(s.queue))):
+        features.append((s.queue[i].text,("queue"+str(i),None)))
+        context_words.append(s.queue[i].text)
+    #stack
+    for i in range(-1,max(-2,len(s.stack)*-1)-1,-1):
+        features.append((s.stack[i].text,(u"stack"+str(i),None)))
+        context_words.append(s.stack[i].text)
+
+    # all pairs of context words
+    for i in range(len(context_words)):
+        for j in range(len(context_words)):
+            if i==j:
+                continue
+            features.append((context_words[i],("",context_words[j])))
+
+    
     return features
 
 
-def featurize_sent(s):
+def featurize_sent(s,my_featurizer):
+    # receives sentence and featurizer function
 
     transitions=transition_seq(s)
-    features=drive_parser(transitions,s)
+    features=[]
+    for state,next in drive_parser(transitions,s):
+        features+=my_featurizer(state,next)
 
     return features
 
@@ -119,21 +145,24 @@ def read_vocab(fh,THR):
          v[line[0]] = int(line[1])
    return v
 
-def main(inp,vocab_file,freq_limit):
+def main(inp,vocab_file,freq_limit,my_featurizer):
+    import codecs
     global lower
 
-    vocab = set(read_vocab(file(vocab_file),freq_limit).keys())
+    vocab = set(read_vocab(codecs.open(vocab_file,u"rt",u"utf-8"),freq_limit).keys())
 
     for i,s in enumerate(conllu_reader(inp,lower)):
         if i % 100000 == 0: print >> sys.stderr,i
         
 
-        features=featurize_sent(s)
-        for w,f in features:
-            print w.encode(u"utf-8"),f.encode("utf-8")
-#        for t in s:
-#            print t
-#        print
+        features=featurize_sent(s,my_featurizer)
+        for w1,(f,w2) in features:
+            if w1 not in vocab:
+                continue
+            if w2!=None and w2 not in vocab:
+                continue
+            p=f+w2 if w2!=None else f
+            print w1.encode(u"utf-8"),p.encode("utf-8")
 
 
 if __name__=="__main__":
@@ -144,7 +173,10 @@ if __name__=="__main__":
     parser.add_argument('-i','--input_file', type=str, help='Input file')
     parser.add_argument('-v','--vocab_file', type=str, help='Vocabulary file')
     parser.add_argument('--freq_limit', type=int, default=10, help='Frequency limit')
+    parser.add_argument('--featurizer', type=str, default='full_context_with_words', help='Featurizer function to use, options: full_context_with_words, next_action')
+
+    featurizers={"full_context_with_words":full_context_with_words, "next_action":next_action}
    
     args = parser.parse_args()
-    main(args.input_file,args.vocab_file,args.freq_limit)
+    main(args.input_file,args.vocab_file,args.freq_limit,featurizers[args.featurizer])
 
