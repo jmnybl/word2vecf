@@ -2,6 +2,7 @@
 from collections import defaultdict,namedtuple
 import codecs
 import copy
+import sys
 
 CoNLLFormat=namedtuple("CoNLLFormat",["ID","FORM","LEMMA","POS","FEAT","HEAD","DEPREL"])
 
@@ -16,7 +17,8 @@ SWAP=3
 #DEPTYPES=u"acomp adpos advcl advmod amod appos aux auxpass ccomp compar comparator complm conj cop csubj csubj-cop dep det dobj gobj gsubj iccomp infmod intj mark name neg nommod nsubj num parataxis partmod poss prt punct rcmod voc xcomp xsubj xsubj-cop nsubj-cop nommod-own csubjpass nn cc number quantmod rel preconj ROOT".split() # TODO: collect these from data
 
 
-def conllu_reader(fname):
+def conllu_reader(fname,lower,conll_format=u"conllu"):
+    form=formats[conll_format]
     f=codecs.open(fname,u"rt",u"utf-8")
     comments=[]
     sentence=[]
@@ -33,6 +35,9 @@ def conllu_reader(fname):
             cols=line.split(u"\t")
             if u"." in cols[0]: # null node
                 continue
+            if lower:
+                cols[form.FORM]=cols[form.FORM].lower()
+                cols[form.LEMMA]=cols[form.LEMMA].lower()
             sentence.append(cols)
 
 def read_conll(inp):

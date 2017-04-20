@@ -3,11 +3,14 @@
 
 import codecs
 from tree import Token, Tree, Dep, State, Transition, conllu_reader
+import sys
 
 SHIFT=0
 RIGHT=1
 LEFT=2
 SWAP=3
+
+lower=True
 
 def extract_transitions(gs_tree,sent):
     state=State(sent,syn=False)
@@ -102,17 +105,35 @@ def featurize_sent(s):
 
     return features
 
-def main(inp):
 
-    for s in conllu_reader(inp):
+
+def read_vocab(fh,THR):
+   # function from the original word2vecf scripts/extract_deps.py
+   global lower
+   v = {}
+   for line in fh:
+      if lower: line = line.lower()
+      line = line.strip().split()
+      if len(line) != 2: continue
+      if int(line[1]) >= THR:
+         v[line[0]] = int(line[1])
+   return v
+
+def main(inp,vocab_file,freq_limit):
+    global lower
+
+    vocab = set(read_vocab(file(vocab_file),freq_limit).keys())
+
+    for i,s in enumerate(conllu_reader(inp,lower)):
+        if i % 100000 == 0: print >> sys.stderr,i
         
 
         features=featurize_sent(s)
         for w,f in features:
             print w,f
-        for t in s:
-            print t
-        print
+#        for t in s:
+#            print t
+#        print
 
 
 if __name__=="__main__":
@@ -121,8 +142,9 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description='')
 
     parser.add_argument('-i','--input_file', type=str, help='Input file')
-   # parser.add_argument('--max_sent', type=int, default=0, help='How many sentences to parse from the input? 0 for all.  (default %(default)d)')
-   # parser.add_argument('--no_avg', default=False, action="store_true",  help='Do not use the averaged perceptron but the original weight vector (default %(default)s)')
+    parser.add_argument('-v','--vocab_file', type=str, help='Vocabulary file')
+    parser.add_argument('--freq_limit', type=int, default=10, help='Frequency limit')
+   
     args = parser.parse_args()
-    main(args.input_file)
+    main(args.input_file,args.vocab_file,args.freq_limit)
 
