@@ -130,7 +130,7 @@ def main(inp,vocab_file,freq_limit):
 
         features=featurize_sent(s)
         for w,f in features:
-            print w,f
+            print w.encode(u"utf-8"),f.encode("utf-8")
 #        for t in s:
 #            print t
 #        print
