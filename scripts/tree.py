@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
+# python 3
 from collections import defaultdict,namedtuple
-import codecs
 import copy
 import sys
 
@@ -17,9 +17,9 @@ SWAP=3
 #DEPTYPES=u"acomp adpos advcl advmod amod appos aux auxpass ccomp compar comparator complm conj cop csubj csubj-cop dep det dobj gobj gsubj iccomp infmod intj mark name neg nommod nsubj num parataxis partmod poss prt punct rcmod voc xcomp xsubj xsubj-cop nsubj-cop nommod-own csubjpass nn cc number quantmod rel preconj ROOT".split() # TODO: collect these from data
 
 
-def conllu_reader(fname,lower,conll_format=u"conllu"):
+def conllu_reader(fname,lower,conll_format="conllu"):
     form=formats[conll_format]
-    f=codecs.open(fname,u"rt",u"utf-8")
+    f=open(fname,"rt",encoding="utf-8")
     comments=[]
     sentence=[]
     for line in f:
@@ -29,11 +29,11 @@ def conllu_reader(fname,lower,conll_format=u"conllu"):
                 yield sentence
             comments=[]
             sentence=[]
-        elif line.startswith(u"#"):
+        elif line.startswith("#"):
             comments.append(line)
         else:
-            cols=line.split(u"\t")
-            if u"." in cols[0]: # null node
+            cols=line.split("\t")
+            if "." in cols[0]: # null node
                 continue
             if lower:
                 cols[form.FORM]=cols[form.FORM].lower()
@@ -43,19 +43,19 @@ def conllu_reader(fname,lower,conll_format=u"conllu"):
 def read_conll(inp):
     """ Read conll format file and yield one sentence at a time as a list of lists of columns. If inp is a string it will be interpreted as filename, otherwise as open file for reading in unicode"""
     if isinstance(inp,basestring):
-        f=codecs.open(inp,u"rt",u"utf-8")
+        f=open(inp,"rt",encoding="utf-8")
     else:
         f=inp
 
     sent=[]
     for line in f:
         line=line.strip()
-        if not line or line.startswith(u"#"): #Do not rely on empty lines in conll files, ignore comments
+        if not line or line.startswith("#"): #Do not rely on empty lines in conll files, ignore comments
             continue 
-        if line.startswith(u"1\t") and sent: #New sentence, and I have an old one to yield
+        if line.startswith("1\t") and sent: #New sentence, and I have an old one to yield
             yield sent
             sent=[]
-        sent.append(line.split(u"\t"))
+        sent.append(line.split("\t"))
     else:
         if sent:
             yield sent
@@ -63,9 +63,9 @@ def read_conll(inp):
     if isinstance(inp,basestring):
         f.close() #Close it if you opened it
 
-def fill_conll(sent,state,conll_format=u"conll09"):
+def fill_conll(sent,state,conll_format="conll09"):
     form=formats[conll_format]
-    for i in xrange(0,len(sent)):
+    for i in range(0,len(sent)):
         token=state.tree.tokens[i]
 #        if token not in state.tree.govs: # ROOT
 #            sent[i][form.HEAD]=u"0"
@@ -73,14 +73,14 @@ def fill_conll(sent,state,conll_format=u"conll09"):
 #        else:
         sent[i][form.HEAD]=unicode(state.tree.govs[token].index+1)
         if state.tree.govs[token].index+1==0: # hard-code deprel to be ROOT
-            sent[i][form.DEPREL]=u"ROOT"
+            sent[i][form.DEPREL]="ROOT"
         else:
             sent[i][form.DEPREL]=state.tree.dtypes[token]
 
 def write_conll(f,sent):
     for line in sent:
-        f.write(u"\t".join(c for c in line)+u"\n")
-    f.write(u"\n")
+        f.write("\t".join(c for c in line)+"\n")
+    f.write("\n")
 
 class Tree(object):
 
@@ -127,7 +127,7 @@ class Tree(object):
         """ Reads conll format and transforms it to a tree instance. `conll_format` is a format name
             which will be looked up in the formats module-level dictionary"""
         form=formats[conll_format] #named tuple with the column indices
-        for i in xrange(0,len(lines)): # create tokens
+        for i in range(0,len(lines)): # create tokens
             line=lines[i]
             token=Token(i,line[form.FORM],pos=line[form.POS],feat=line[form.FEAT],lemma=line[form.LEMMA])
             self.tokens.append(token)
@@ -167,14 +167,14 @@ class Tree(object):
     def is_nonprojective(self):
         """ Return 'non-projective tokens' if tree is non-projective, else empty set"""
         non_projs=set()
-        rootdep=Dep(Token(-1,u""),self.root,u"dummydep")
-        for i in xrange(0,len(self.deps)):
+        rootdep=Dep(Token(-1,""),self.root,"dummydep")
+        for i in range(0,len(self.deps)):
             dep1=self.deps[i]
             if dep1.gov!=self.root and dep1.dep!=self.root:
                 non_proj=dep1.is_crossing(rootdep)
                 if non_proj is not None:
                     non_projs.add(dep1.dep)
-            for j in xrange(i+1,len(self.deps)):
+            for j in range(i+1,len(self.deps)):
                 dep2=self.deps[j]
                 if dep1.gov==dep2.gov or dep1.dep==dep2.dep or dep1.gov==dep2.dep or dep1.dep==dep2.gov: continue
                 non_proj=dep1.is_crossing(dep2)
@@ -240,10 +240,10 @@ class Token(object):
         self.lemma=lemma
 
     def __str__(self):
-        return self.text.encode(u"utf-8")
+        return self.text
 
     def __repr__(self):
-        return (u"<"+self.text+u">").encode(u"utf-8")
+        return "<"+self.text+">"
 
     def __eq__(self,other):
         return self.index==other.index
@@ -276,10 +276,10 @@ class Dep(object):
 
 
     def __str__(self):
-        return (u"<Gov:"+unicode(self.gov.index)+u",Dep:"+unicode(self.dep.index)+u",dType:"+self.dType+u">").encode(u"utf-8")
+        return "<Gov:"+str(self.gov.index)+",Dep:"+str(self.dep.index)+",dType:"+self.dType+">"
 
     def __repr__(self):
-        return (u"<Gov:"+unicode(self.gov.index)+u",Dep:"+unicode(self.dep.index)+u",dType:"+self.dType+u">").encode(u"utf-8")
+        return "<Gov:"+str(self.gov.index)+",Dep:"+str(self.dep.index)+",dType:"+self.dType+">"
 
 
 
@@ -296,7 +296,7 @@ class Transition(object):
         return str(self.move)+":"+str(self.dType)
 
     def __unicode__(self):
-        return unicode(self.move)+u":"+unicode(self.dType)
+        return unicode(self.move)+":"+unicode(self.dType)
 
     def __repr__(self):
         return str(self.move)+":"+str(self.dType)
@@ -312,7 +312,7 @@ class State(object):
             self.tree=None
             self.queue=[]
         self.stack=[]
-        self.queue=[Token(-1,u"ROOT",lemma=u"ROOT",pos=u"ROOT",feat=u"ROOT")]
+        self.queue=[Token(-1,"ROOT",lemma="ROOT",pos="ROOT",feat="ROOT")]
         self.queue+=self.tree.tokens[:]
         self.score=0.0
         self.transitions=[]
@@ -355,7 +355,7 @@ class State(object):
         """
         if prefix!=None: #Will not extract information from the final state, but that probably makes no difference at all
             for f,w in self.features.iteritems():
-                if f.startswith(u"grf"):
+                if f.startswith("grf"):
                     d[f]=d.get(f,0.0)+w
                 else:
                     d[prefix+f]=d.get(f,0.0)+w
@@ -408,8 +408,8 @@ class State(object):
         return moves
 
     def __str__(self):
-        return (u"Tree ready? "+unicode(self.tree.ready)+u"\nStack: ["+u" ".join(token.text for token in self.stack)+u"]\nQueue: ["+u" ".join(token.text for token in self.queue)+u"]\nScore:"+unicode(self.score)+u"\n"+u"\n".join(u"("+dep.gov.text+u" "+dep.dep.text+u" "+dep.dType+u")" for dep in self.tree.deps)).encode(u"utf-8")
+        return "Tree ready? "+str(self.tree.ready)+"\nStack: ["+" ".join(token.text for token in self.stack)+"]\nQueue: ["+" ".join(token.text for token in self.queue)+"]\nScore:"+str(self.score)+"\n"+"\n".join("("+dep.gov.text+" "+dep.dep.text+" "+dep.dType+")" for dep in self.tree.deps)
 
     def __repr__(self):
-        return u",".join(str(t.move)+u":"+str(t.dType) for t in self.transitions)
+        return ",".join(str(t.move)+":"+str(t.dType) for t in self.transitions)
 

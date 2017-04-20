@@ -2,12 +2,13 @@
 
 name=$1
 limit=$2
+featurizer=$3
 
 cat > data.tmp
 
-cat data.tmp | grep -Pv '^#' | cut -f 2 | python scripts/vocab.py $limit > $name.vocab
+cat data.tmp | grep -Pv '^#' | cut -f 2 | python3 scripts/vocab.py $limit > $name.vocab
 
-python scripts/extract_transition_seq.py -i data.tmp -v $name.vocab --freq_limit $limit > $name.dep.contexts
+python3 scripts/extract_transition_seq.py -i data.tmp -v $name.vocab --freq_limit $limit --featurizer $featurizer > $name.dep.contexts
 
 #zcat /wrk/jmnybl/word2vecf_tmpdir/$lang.dep.contexts | ./big_shuf.sh $lang > /wrk/jmnybl/word2vecf_tmpdir/$lang.dep.contexts.notokens
 

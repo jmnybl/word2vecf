@@ -146,14 +146,13 @@ def read_vocab(fh,THR):
    return v
 
 def main(inp,vocab_file,freq_limit,my_featurizer):
-    import codecs
     global lower
 
-    vocab = set(read_vocab(codecs.open(vocab_file,u"rt",u"utf-8"),freq_limit).keys())
+    vocab = set(read_vocab(open(vocab_file,"rt",encoding="utf-8"),freq_limit).keys())
 
     for i,s in enumerate(conllu_reader(inp,lower)):
-        if i % 100000 == 0: print >> sys.stderr,i
-        
+        if i % 100000 == 0:
+            print(i,file=sys.stderr)        
 
         features=featurize_sent(s,my_featurizer)
         for w1,(f,w2) in features:
@@ -162,7 +161,7 @@ def main(inp,vocab_file,freq_limit,my_featurizer):
             if w2!=None and w2 not in vocab:
                 continue
             p=f+w2 if w2!=None else f
-            print w1.encode(u"utf-8"),p.encode("utf-8")
+            print(w1,p)
 
 
 if __name__=="__main__":
