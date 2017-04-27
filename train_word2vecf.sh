@@ -3,12 +3,13 @@
 name=$1
 limit=$2
 featurizer=$3
+conllucolumn=$4
 
 cat > data.tmp
 
-cat data.tmp | grep -Pv '^#' | cut -f 2 | python3 scripts/vocab.py $limit > $name.vocab
+cat data.tmp | grep -P '^[0-9]' | python3 scripts/vocab.py --freq_limit $limit  > $name.vocab
 
-python3 scripts/extract_transition_seq.py -i data.tmp -v $name.vocab --freq_limit $limit --featurizer $featurizer > $name.dep.contexts
+cat data.tmp | python3 scripts/extract_transition_seq.py -v $name.vocab --freq_limit $limit --conllu_column $conllucolumn --featurizer $featurizer > $name.dep.contexts
 
 #zcat /wrk/jmnybl/word2vecf_tmpdir/$lang.dep.contexts | ./big_shuf.sh $lang > /wrk/jmnybl/word2vecf_tmpdir/$lang.dep.contexts.notokens
 

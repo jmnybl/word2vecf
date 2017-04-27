@@ -79,36 +79,37 @@ def drive_parser(transitions,sent):
 
 
 actions=["SHIFT","RIGHT-ARC","LEFT-ARC","SWAP"]
-
-def next_action(s,next):
+token_attrs={"FORM":"text","LEMMA":"lemma","UPOS":"pos","FEAT":"feat"}
+def next_action(s,next,column):
     # predict where the word is combined to next action
 
     if len(s.stack)==0:
         return []
 
     features=[]
-    features.append((s.stack[-1].text,(u"stack1_"+actions[next.move],None)))
+    
+    features.append((getattr(s.stack[-1],token_attrs[column]),(u"stack1_"+actions[next.move],None)))
     if next.dType!=None:
-        features.append((s.stack[-1].text,(u"stack1_"+next.dType,None)))
+        features.append((getattr(s.stack[-1],token_attrs[column]),(u"stack1_"+next.dType,None)))
     if len(s.stack)>1:
-        features.append((s.stack[-2].text,(u"stack2_"+actions[next.move],None)))
+        features.append((getattr(s.stack[-2],token_attrs[column]),(u"stack2_"+actions[next.move],None)))
         if next.dType!=None:
-            features.append((s.stack[-2].text,(u"stack2_"+next.dType,None)))
+            features.append((getattr(s.stack[-2],token_attrs[column]),(u"stack2_"+next.dType,None)))
     return features
 
-def full_context_with_words(s,next):
+def full_context_with_words(s,next,column):
     # predict where the word is and all its context words
 
     features=[]
     context_words=[]
     # queue
     for i in range(min(2,len(s.queue))):
-        features.append((s.queue[i].text,("queue"+str(i),None)))
+        features.append((getattr(s.queue[i],token_attrs[column]),("queue"+str(i),None)))
         context_words.append(s.queue[i].text)
     #stack
     for i in range(-1,max(-2,len(s.stack)*-1)-1,-1):
-        features.append((s.stack[i].text,(u"stack"+str(i),None)))
-        context_words.append(s.stack[i].text)
+        features.append((getattr(s.stack[i],token_attrs[column]),(u"stack"+str(i),None)))
+        context_words.append(getattr(s.stack[i],token_attrs[column]))
 
     # all pairs of context words
     for i in range(len(context_words)):
@@ -121,40 +122,43 @@ def full_context_with_words(s,next):
     return features
 
 
-def featurize_sent(s,my_featurizer):
+def featurize_sent(s,my_featurizer,column):
     # receives sentence and featurizer function
 
     transitions=transition_seq(s)
     features=[]
     for state,next in drive_parser(transitions,s):
-        features+=my_featurizer(state,next)
+        features+=my_featurizer(state,next,column)
 
     return features
 
 
 
-def read_vocab(fh,THR):
+def read_vocab(fh,THR,column):
    # function from the original word2vecf scripts/extract_deps.py
    global lower
    v = {}
    for line in fh:
-      if lower: line = line.lower()
+      if (column=="FORM" or column=="LEMMA") and lower:
+         line = line.lower()
       line = line.strip().split()
       if len(line) != 2: continue
       if int(line[1]) >= THR:
          v[line[0]] = int(line[1])
    return v
 
-def main(inp,vocab_file,freq_limit,my_featurizer):
+def main(args):
     global lower
 
-    vocab = set(read_vocab(open(vocab_file,"rt",encoding="utf-8"),freq_limit).keys())
+    featurizers={"full_context_with_words":full_context_with_words, "next_action":next_action}
 
-    for i,s in enumerate(conllu_reader(inp,lower)):
+    vocab = set(read_vocab(open(args.vocab_file,"rt",encoding="utf-8"),args.freq_limit,args.conllu_column).keys())
+
+    for i,s in enumerate(conllu_reader(sys.stdin,lower)):
         if i % 100000 == 0:
             print(i,file=sys.stderr)        
 
-        features=featurize_sent(s,my_featurizer)
+        features=featurize_sent(s,featurizers[args.featurizer],args.conllu_column)
         for w1,(f,w2) in features:
             if w1 not in vocab:
                 continue
@@ -169,13 +173,12 @@ if __name__=="__main__":
     import argparse
     parser = argparse.ArgumentParser(description='')
 
-    parser.add_argument('-i','--input_file', type=str, help='Input file')
     parser.add_argument('-v','--vocab_file', type=str, help='Vocabulary file')
     parser.add_argument('--freq_limit', type=int, default=10, help='Frequency limit')
     parser.add_argument('--featurizer', type=str, default='full_context_with_words', help='Featurizer function to use, options: full_context_with_words, next_action')
+    parser.add_argument('--conllu_column', type=str, default='FORM', help='Which conllu column is used in input layer, i.e. do we train word, lemma or feature embeddings, options: FORM, LEMMA, UPOS, FEAT')
 
-    featurizers={"full_context_with_words":full_context_with_words, "next_action":next_action}
    
     args = parser.parse_args()
-    main(args.input_file,args.vocab_file,args.freq_limit,featurizers[args.featurizer])
+    main(args)
 
