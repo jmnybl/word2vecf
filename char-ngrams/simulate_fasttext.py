@@ -10,6 +10,9 @@ def read_vocab(vocab_file):
     for line in open(vocab_file,"rt",encoding="utf-8"):
         line=line.strip()
         assert len(line.split("\t"))==2
+        if " " in line: # TODO because of udpipe, should be fixed properly...
+            print("Skipping token",line,file=sys.stderr)
+            continue
         vocab.append(line.split("\t"))
     return vocab
 
