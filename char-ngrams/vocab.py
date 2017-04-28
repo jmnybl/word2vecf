@@ -1,8 +1,18 @@
 # python3
 import sys
 from collections import Counter
+from sklearn.feature_extraction.text import CountVectorizer
 
 conllu="ID,FORM,LEMMA,UPOS,XPOS,FEAT,HEAD,DEPREL,DEPS,MISC".split(",")
+
+analyzer=CountVectorizer(analyzer='char', ngram_range=(3, 6)).build_analyzer()
+def char_ngrams(word):
+    # given a word, return all its ngrams as defined in fast text
+    ngrams=[]
+    ngrams.append(word)
+    for ngram in analyzer("$"+word+"$"):
+        ngrams.append("char_"+ngram)
+    return ngrams
 
 def create_vocab(args):
     lower=True
@@ -19,9 +29,10 @@ def create_vocab(args):
           l = []
        token=w.strip().split("\t")[conllu.index(args.conllu_column)]
        if lower:
-          l.append(token.lower())
+          ngrams=char_ngrams(token.lower())
        else:
-          l.append(token)
+          ngrams=char_ngrams(token)
+       l+=ngrams
     wc.update(l)
 
     for w,c in sorted([(w,c) for w,c in wc.items() if c >= thr and w != ''],key=lambda x:-x[1]):
@@ -37,5 +48,6 @@ if __name__=="__main__":
 
    
     args = parser.parse_args()
+
     create_vocab(args)
 

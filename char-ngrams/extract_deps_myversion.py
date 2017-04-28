@@ -4,6 +4,7 @@
 # zcat treebank.gz |python extract_deps.py |gzip - > deps.gz
 import sys
 from collections import defaultdict
+from vocab import char_ngrams
 
 lower=True
 
@@ -61,14 +62,22 @@ def extract_deps(vocab):
              else:
                 h = par[1] # parent token form
              if h not in vocab: continue
-             print(h,"O_"+rel)
-             print(m,"I_"+rel)
-             print(m,upos) # UPOS of the token
-             if feat=="_":
-                print(m,"nofeat")
-             else:
-                for fe in feat.split("|"):
-                   print(m,fe)
+
+             # parent char ngrams
+             h_ngrams=char_ngrams(h)
+             for ngram in h_ngrams:
+                print(ngram,"O_"+rel)
+
+             # token ngrams
+             m_ngrams=char_ngrams(m)
+             for ngram in m_ngrams:
+                print(ngram,"I_"+rel)
+                print(ngram,upos) # UPOS of the token
+                if feat=="_":
+                    print(ngram,"nofeat")
+                else:
+                    for fe in feat.split("|"):
+                        print(ngram,fe)
        except:
           print("BROKEN CONLLU",file=sys.stderr)
           #d[h].append("_".join((rel,m)))
