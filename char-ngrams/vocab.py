@@ -49,5 +49,10 @@ if __name__=="__main__":
    
     args = parser.parse_args()
 
+    if args.conllu_column!="FORM" and args.conllu_column!="LEMMA":
+        print("--conllu_column should be FORM or LEMMA, not",args.conllu_column,file=sys.stderr)
+        print("Terminating process")
+        sys.exit(1)
+
     create_vocab(args)
 
