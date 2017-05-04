@@ -125,11 +125,13 @@ def full_context_with_words(s,next,column):
 
 def featurize_sent(s,my_featurizer,column):
     # receives sentence and featurizer function
-
-    transitions=transition_seq(s)
-    features=[]
-    for state,next in drive_parser(transitions,s):
-        features+=my_featurizer(state,next,column)
+    try:
+        transitions=transition_seq(s)
+        features=[]
+        for state,next in drive_parser(transitions,s):
+            features+=my_featurizer(state,next,column)
+    except:
+        features=[]
 
     return features
 

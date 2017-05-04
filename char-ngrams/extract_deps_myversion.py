@@ -50,7 +50,7 @@ def extract_deps(vocab):
           for tok in sent[1:]: # this skips root
              par = sent[tok[2]]
              m = tok[1] # token.form
-             if m not in vocab: continue
+             #if m not in vocab: continue
              rel = tok[3]
              upos = tok[4]
              feat = tok[5]
@@ -61,16 +61,20 @@ def extract_deps(vocab):
                 h = ppar[1]
              else:
                 h = par[1] # parent token form
-             if h not in vocab: continue
+             #if h not in vocab: continue
 
              # parent char ngrams
              h_ngrams=char_ngrams(h)
              for ngram in h_ngrams:
+                if ngram not in vocab:
+                    continue
                 print(ngram,"O_"+rel)
 
              # token ngrams
              m_ngrams=char_ngrams(m)
              for ngram in m_ngrams:
+                if ngram not in vocab:
+                    continue
                 print(ngram,"I_"+rel)
                 print(ngram,upos) # UPOS of the token
                 if feat=="_":
