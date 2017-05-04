@@ -312,7 +312,7 @@ class State(object):
             self.tree=None
             self.queue=[]
         self.stack=[]
-        self.queue=[Token(-1,"ROOT",lemma="ROOT",pos="ROOT",feat="ROOT")]
+        self.queue=[Token(-1,"*ROOT*",lemma="*ROOT*",pos="*ROOT*",feat="*ROOT*")]
         self.queue+=self.tree.tokens[:]
         self.score=0.0
         self.transitions=[]
@@ -375,7 +375,7 @@ class State(object):
             raise ValueError("Incorrect transition")
         self.transitions.append(trans)
         if len(self.queue)==0 and len(self.stack)==1:
-            assert self.stack[-1].index==-1,("ROOT is not the last token in the stack.", self.stack)
+            assert self.stack[-1].index==-1,("*ROOT* is not the last token in the stack.", self.stack)
             self.tree.ready=True
 
 

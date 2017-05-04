@@ -5,6 +5,7 @@ import gzip
 from tree import Token, Tree, Dep, State, Transition, conllu_reader
 import sys
 from vocab import char_ngrams
+from collections import Counter
 
 SHIFT=0
 RIGHT=1
@@ -148,14 +149,16 @@ def read_vocab(fh,THR,column):
       if len(line) != 2: continue
       if int(line[1]) >= THR:
          v[line[0]] = int(line[1])
-   return v
+   vocab=set(v.keys())
+   #most_common=set([key for key,val in Counter(v).most_common(10000)])
+   return vocab
 
 def main(args):
     global lower
 
     featurizers={"full_context_with_words":full_context_with_words, "next_action":next_action}
 
-    vocab = set(read_vocab(open(args.vocab_file,"rt",encoding="utf-8"),args.freq_limit,args.conllu_column).keys())
+    vocab=read_vocab(open(args.vocab_file,"rt",encoding="utf-8"),args.freq_limit,args.conllu_column)
 
     for i,s in enumerate(conllu_reader(sys.stdin,lower)):
         if i % 100000 == 0:
@@ -164,6 +167,11 @@ def main(args):
         features=featurize_sent(s,featurizers[args.featurizer],args.conllu_column)
         for w1,(f,w2) in features:
             # ngrams
+            if w1=="*ROOT*": # artificial tree root token
+                continue
+            #if w1 in most_common:
+            #    input_ngrams=[w1]
+            #else:
             input_ngrams=char_ngrams(w1)
             for ngram in input_ngrams:
                 if ngram not in vocab:
