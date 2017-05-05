@@ -50,6 +50,8 @@ def extract_deps(vocab,most_common_words):
     for i,sent in enumerate(read_conll(sys.stdin)):
        if i % 100000 == 0:
             print(i,file=sys.stderr)
+       if args.max_sent>0 and i>args.max_sent:
+            break 
        #d = defaultdict(list)
        try:
           for tok in sent[1:]: # this skips root
@@ -120,6 +122,7 @@ if __name__=="__main__":
 #    parser.add_argument('-i','--input_file', type=str, help='Input file')
     parser.add_argument('-v','--vocab_file', type=str, help='Vocabulary file')
     parser.add_argument('--freq_limit', type=int, default=10, help='Frequency limit')
+    parser.add_argument('--max_sent', type=int, default=0, help='How many sentences to read, zero for all, default=0')
    
     args = parser.parse_args()
     main(args)

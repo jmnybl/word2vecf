@@ -169,7 +169,9 @@ def main(args):
 
     for i,s in enumerate(conllu_reader(sys.stdin,lower)):
         if i % 100000 == 0:
-            print(i,file=sys.stderr)        
+            print(i,file=sys.stderr)  
+        if args.max_sent>0 and i>args.max_sent:
+            break      
 
         features=featurize_sent(s,featurizers[args.featurizer],args.conllu_column)
         for w1,(f,w2) in features:
@@ -199,6 +201,7 @@ if __name__=="__main__":
     parser.add_argument('--freq_limit', type=int, default=10, help='Frequency limit')
     parser.add_argument('--featurizer', type=str, default='full_context_with_words', help='Featurizer function to use, options: full_context_with_words, next_action')
     parser.add_argument('--conllu_column', type=str, default='FORM', help='Which conllu column is used in input layer, i.e. do we train word, lemma or feature embeddings, options: FORM, LEMMA, UPOS, FEAT')
+    parser.add_argument('--max_sent', type=int, default=0, help='How many sentences to read, zero for all, default=0')
    
     args = parser.parse_args()
 
