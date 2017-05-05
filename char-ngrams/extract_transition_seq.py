@@ -167,7 +167,7 @@ def main(args):
         features=featurize_sent(s,featurizers[args.featurizer],args.conllu_column)
         for w1,(f,w2) in features:
             # ngrams
-            if w1=="*ROOT*": # artificial tree root token
+            if w1=="*ROOT*" or w1=="*root*": # artificial tree root token
                 continue
             #if w1 in most_common:
             #    input_ngrams=[w1]
