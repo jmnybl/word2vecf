@@ -92,11 +92,11 @@ def next_action(s,next,column):
     
     features.append((getattr(s.stack[-1],token_attrs[column]),(u"stack1_"+actions[next.move],None)))
     if next.dType!=None:
-        features.append((getattr(s.stack[-1],token_attrs[column]),(u"stack1_"+next.dType,None)))
+        features.append((getattr(s.stack[-1],token_attrs[column]),(u"stack1_"+actions[next.move]+"_"+next.dType,None)))
     if len(s.stack)>1:
         features.append((getattr(s.stack[-2],token_attrs[column]),(u"stack2_"+actions[next.move],None)))
         if next.dType!=None:
-            features.append((getattr(s.stack[-2],token_attrs[column]),(u"stack2_"+next.dType,None)))
+            features.append((getattr(s.stack[-2],token_attrs[column]),(u"stack2_"+actions[next.move]+"_"+next.dType,None)))
     return features
 
 def full_context_with_words(s,next,column):
@@ -149,16 +149,23 @@ def read_vocab(fh,THR,column):
       if len(line) != 2: continue
       if int(line[1]) >= THR:
          v[line[0]] = int(line[1])
-   vocab=set(v.keys())
-   #most_common=set([key for key,val in Counter(v).most_common(10000)])
-   return vocab
+   full_vocab=set(v.keys())
+   words=sorted([(w,c) for w,c in v.items() if c >= THR and w != '' and w.startswith('char_')==False],key=lambda x:-x[1])
+   most_common_words=set()
+   for w,c in words[:round(len(words)/3)]:
+      most_common_words.add(w)
+   return full_vocab,most_common_words,len(words)
 
 def main(args):
     global lower
 
     featurizers={"full_context_with_words":full_context_with_words, "next_action":next_action}
 
-    vocab=read_vocab(open(args.vocab_file,"rt",encoding="utf-8"),args.freq_limit,args.conllu_column)
+    vocab,most_common_words,total_words=read_vocab(open(args.vocab_file,"rt",encoding="utf-8"),args.freq_limit,args.conllu_column)
+
+    print("full vocab:",len(vocab),file=sys.stderr) 
+    print("most common words:",len(most_common_words),file=sys.stderr)   
+    print("total words:",total_words,file=sys.stderr) 
 
     for i,s in enumerate(conllu_reader(sys.stdin,lower)):
         if i % 100000 == 0:
@@ -169,10 +176,10 @@ def main(args):
             # ngrams
             if w1=="*ROOT*" or w1=="*root*": # artificial tree root token
                 continue
-            #if w1 in most_common:
-            #    input_ngrams=[w1]
-            #else:
-            input_ngrams=char_ngrams(w1)
+            if w1 in most_common_words:
+                input_ngrams=[w1]
+            else:
+                input_ngrams=char_ngrams(w1)
             for ngram in input_ngrams:
                 if ngram not in vocab:
                     continue

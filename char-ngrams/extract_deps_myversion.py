@@ -38,10 +38,15 @@ def read_vocab(fh,THR):
       if len(line) != 2: continue
       if int(line[1]) >= THR:
          v[line[0]] = int(line[1])
-   return v
+   full_vocab=set(v.keys())
+   words=sorted([(w,c) for w,c in v.items() if c >= THR and w != '' and w.startswith('char_')==False],key=lambda x:-x[1])
+   most_common_words=set()
+   for w,c in words[:round(len(words)/3)]:
+      most_common_words.add(w)
+   return full_vocab,most_common_words,len(words)
 
 
-def extract_deps(vocab):
+def extract_deps(vocab,most_common_words):
     for i,sent in enumerate(read_conll(sys.stdin)):
        if i % 100000 == 0:
             print(i,file=sys.stderr)
@@ -64,14 +69,23 @@ def extract_deps(vocab):
              #if h not in vocab: continue
 
              # parent char ngrams
-             h_ngrams=char_ngrams(h)
-             for ngram in h_ngrams:
-                if ngram not in vocab:
-                    continue
-                print(ngram,"O_"+rel)
+             if h!="*root*":
+                if h in most_common_words:
+                    h_ngrams=[h]
+                else:
+                    h_ngrams=char_ngrams(h)
+                for ngram in h_ngrams:
+                    if ngram not in vocab:
+                        continue
+                    print(ngram,"O_"+rel)
 
              # token ngrams
-             m_ngrams=char_ngrams(m)
+             if m == "*root*":
+                continue
+             if m in most_common_words:
+                m_ngrams=[m]
+             else:
+                m_ngrams=char_ngrams(m)
              for ngram in m_ngrams:
                 if ngram not in vocab:
                     continue
@@ -89,11 +103,14 @@ def extract_deps(vocab):
        #for w,cs in d.iteritems():
        #   print w," ".join(cs)
 
-def main(vocab_file,freq_limit):
+def main(args):
 
-    vocab = set(read_vocab(open(vocab_file,"rt",encoding="utf-8"),freq_limit).keys())
-    print("vocab:",len(vocab),file=sys.stderr)    
-    extract_deps(vocab)
+    vocab,most_common_words,total_words=read_vocab(open(args.vocab_file,"rt",encoding="utf-8"),args.freq_limit)
+
+    print("full vocab:",len(vocab),file=sys.stderr) 
+    print("most common words:",len(most_common_words),file=sys.stderr)   
+    print("total words:",total_words,file=sys.stderr) 
+    extract_deps(vocab,most_common_words)
 
 if __name__=="__main__":
 
@@ -105,6 +122,6 @@ if __name__=="__main__":
     parser.add_argument('--freq_limit', type=int, default=10, help='Frequency limit')
    
     args = parser.parse_args()
-    main(args.vocab_file,args.freq_limit)
+    main(args)
 
 
