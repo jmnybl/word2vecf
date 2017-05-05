@@ -23,7 +23,7 @@ def create_vocab(args):
     l = []
     for i,w in enumerate(sys.stdin): # line is one conllu token line
        if i % 1000000 == 0:
-          #if i > 10000000: break
+          if i > 10000000: break # estimate vocabulary based on the 10M words
           print(i,len(wc),file=sys.stderr)
           wc.update(l)
           l = []
