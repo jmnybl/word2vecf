@@ -10,10 +10,11 @@ def read_vocab(vocab_file):
     for line in open(vocab_file,"rt",encoding="utf-8"):
         line=line.strip()
         assert len(line.split("\t"))==2
-        if " " in line: # TODO because of udpipe, should be fixed properly...
-            print("Skipping token",line,file=sys.stderr)
-            continue
-        vocab.append(line.split("\t"))
+        token,count=line.split("\t")
+        if " " in token: # TODO because of udpipe, should be fixed properly...
+            print("Replacing token",token,"with",token.replace(" ","\u00A0"),file=sys.stderr)
+            token=token.replace(" ","\u00A0")
+        vocab.append((token,count))
     return vocab
 
 def save_bin(words,data,fname):
@@ -36,11 +37,27 @@ def save_bin(words,data,fname):
     out.close()
     print("Model saved to",fname,file=sys.stderr)
 
+def save_txt(words,data,fname):
+    """
+    save model in binary format
+    """
+
+    out=open(fname,"w")
+
+    rows,dims=data.shape
+    print("{} {}".format(rows,dims),file=out)
+    counter=0
+
+    for i,w in enumerate(words):
+        print(w," ".join(("{:6f}".format(x) for x in data[i,:])),file=out)
+    out.close()
+
 def main(args):
 
-    model=lwvlib.load(args.char_model)
-
     vocabulary=read_vocab(args.vocab)
+
+    model=lwvlib.load(args.char_model)
+   
     
     # TODO normalize?
 
@@ -82,7 +99,7 @@ def main(args):
     print("New vector model:",data.shape,file=sys.stderr)
     assert len(words)==data.shape[0]
     
-    save_bin(words,data,args.output)
+    save_txt(words,data,args.output)
 
 
 if __name__=="__main__":
