@@ -8,7 +8,7 @@ def read_vocab(vocab_file):
     vocab=[]
     for line in open(vocab_file,"rt",encoding="utf-8"):
         line=line.strip()
-        assert len(line.split("\t"))==3
+        assert len(line.split("\t"))==2
         vocab.append(line.split("\t"))
     return vocab
 
@@ -62,17 +62,17 @@ def main(args):
     # data: the vector matrix
     data=np.zeros((len(vocabulary),model.vsize),np.float32)
     
-    for feature,wcount,postags in vocabulary:
+    for feature,wcount in vocabulary:
         vector=np.zeros(model.vsize,np.float32)
         norm=0
-        for pos in postags.split(","):
-            for feat in feature.split("|"):
-                vidx=model.get(pos+"|"+feat)
-            if vidx!=None:
-                vector=np.add(vector,model.vectors[vidx])
-                norm+=1
+        postag,feats=feature.split("|",1)
+        for feat in feats.split("|"):
+            vidx=model.get(postag+"|"+feat)
+        if vidx!=None:
+            vector=np.add(vector,model.vectors[vidx])
+            norm+=1
         if norm==0:
-            print("No vector for feature",feature,"with pos tags",postags,file=sys.stderr)
+            print("No vector for feature",feature,"with pos tag",postag,file=sys.stderr)
             continue
         vector=np.divide(vector,norm)
         data[len(all_features),:]=vector
