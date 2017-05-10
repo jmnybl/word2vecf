@@ -91,11 +91,11 @@ def next_action(s,next):
 
     features.append((s.stack[-1],(u"stack1_"+actions[next.move],None)))
     if next.dType!=None:
-        features.append((s.stack[-1],(u"stack1_"+next.dType,None)))
+        features.append((s.stack[-1],(u"stack1_"+actions[next.move]+"_"+next.dType,None)))
     if len(s.stack)>1:
         features.append((s.stack[-2],(u"stack2_"+actions[next.move],None)))
         if next.dType!=None:
-            features.append((s.stack[-2],(u"stack2_"+next.dType,None)))
+            features.append((s.stack[-2],(u"stack2_"+actions[next.move]+"_"+next.dType,None)))
     return features
 
 #def full_context_with_words(s,next):
@@ -161,7 +161,7 @@ def main(args):
         features=featurize_sent(s,next_action)
         for w1,(f,w2) in features: # w1 is a token instance
             # ngrams
-            if w1.text=="*ROOT*": # artificial tree root token
+            if w1.text=="*ROOT*" or w1.text=="*root*": # artificial tree root token
                 continue
             for feat in w1.feat.split("|"):
                 inp="|".join([w1.pos,feat])

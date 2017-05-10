@@ -49,6 +49,7 @@ def save_txt(words,data,fname):
 
 def main(args):
 
+    print("Reading",args.char_model,"model",file=sys.stderr)
     model=lwvlib.load(args.char_model)
 
     vocabulary=read_vocab(args.vocab)
