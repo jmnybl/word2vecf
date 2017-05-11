@@ -5,12 +5,21 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 conllu="ID,FORM,LEMMA,UPOS,XPOS,FEAT,HEAD,DEPREL,DEPS,MISC".split(",")
 
-analyzer=CountVectorizer(analyzer='char', ngram_range=(3, 6)).build_analyzer()
+analyzer=CountVectorizer(analyzer='char', ngram_range=(2, 6)).build_analyzer()
 def char_ngrams(word):
     # given a word, return all its ngrams as defined in fast text
     ngrams=[]
     ngrams.append(word)
     for ngram in analyzer("$"+word+"$"):
+        ngrams.append("char_"+ngram)
+    return ngrams
+
+second_analyzer=CountVectorizer(analyzer='char', ngram_range=(1, 4)).build_analyzer()
+def second_char_ngrams(word):
+    # given a word, return all its ngrams as defined in fast text
+    ngrams=[]
+    ngrams.append(word)
+    for ngram in second_analyzer("$"+word+"$"):
         ngrams.append("char_"+ngram)
     return ngrams
 

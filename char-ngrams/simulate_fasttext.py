@@ -1,5 +1,5 @@
 import lwvlib # https://github.com/fginter/wvlib_light
-from vocab import char_ngrams
+from vocab import char_ngrams, second_char_ngrams
 import numpy as np
 import sys
 import struct
@@ -85,6 +85,13 @@ def main(args):
             if vidx!=None:
                 vector=np.add(vector,model.vectors[vidx])
                 norm+=1
+        if norm==0:
+            for ngram in second_char_ngrams(w):
+                vidx=model.get(ngram)
+                if vidx!=None:
+                    print("Found only smaller ngrams",w)
+                    vector=np.add(vector,model.vectors[vidx])
+                    norm+=1
         if norm==0:
             print("No vector for word",w,file=sys.stderr)
             continue
